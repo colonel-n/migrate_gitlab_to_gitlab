@@ -1,3 +1,4 @@
+require 'bundler/setup'
 require 'json'
 require 'httpclient'
 require 'fileutils'
@@ -18,13 +19,13 @@ TARGET_PROJECTS.each do |id|
 	write_result_log "Project migration start"
 	source = JSON.parse(httpclient.get("#{SOURCE_URL}api/v3/projects/#{id}", {'private_token' => PRIVATE_TOKEN}).body)
 	write_result_log source
-	params = {'private_token' => TARGET_TOKEN,'name'=>source['name'],'namespace_id'=>MEGANE_NAMESPACE}
+	params = {'private_token' => ALTER_NOT_FOUND_TOKEN,'name'=>source['name'],'namespace_id'=>TARGET_NAMESPACE}
 	params['description'] = source['description'] unless source['description'].nil? 
 	mig_res = httpclient.post("#{TARGET_URL}api/v3/projects", params)
 	write_result_log mig_res.body
 	write_result_log "Project migration end"
 	
-	project_id = JSON.parse(mig_res[id])['id']
+	project_id = JSON.parse(mig_res.body)['id']
 	# Label
 	l_res = httpclient.get("#{SOURCE_URL}api/v3/projects/#{id}/labels", {'per_page'=> PER_PAGE,'private_token' => PRIVATE_TOKEN})
 	write_result_log(l_res.body)
@@ -39,7 +40,7 @@ TARGET_PROJECTS.each do |id|
 	write_result_log(mi_res.body)
 	JSON.parse(mi_res.body).each do |res|
 		write_result_log(res)
-		params = {'private_token' => ALTER_NOT_FOUND_TOKEN,'title'=>res['title']}
+		params = {'private_token' => ALTER_NOT_FOUND_USER[:token],'title'=>res['title']}
 		params['description'] = res['description'] unless res['description'].nil? 
 		params['due_date'] = res['due_date'] unless res['due_date'].nil? 
 		write_result_log(params)
@@ -78,7 +79,7 @@ TARGET_PROJECTS.each do |id|
 	write_result_log('Issue End')
 	
 	# Merge Request
-	write_result_log('Merge New')
+	write_result_log('MergeRequest New')
     m_res = httpclient.get("#{SOURCE_URL}api/v3/projects/#{id}/merge_requests", {'per_page'=> PER_PAGE,'private_token' => PRIVATE_TOKEN})
     write_result_log(m_res.body)
 	JSON.parse(m_res.body).each do |res|
@@ -104,5 +105,5 @@ TARGET_PROJECTS.each do |id|
 			write_result_log(e_res.body)
 		end
 	end
-	write_result_log('Merge End')	
+	write_result_log('MergeRequest End')	
 end
